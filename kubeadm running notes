@@ -1,0 +1,942 @@
+Kubernetes:
+Containerization --> Docker, Rocket(Rkt),Container-d
+   Containerization involves writing/modifying Dockerfiles and using those files
+   to create images and shipping the images to image registries.  
+   From the registries these images can be distributed to any  environment.  
+
+  We could also use Containerization softwares like Docker to deploy and manage Containers
+
+Container Orchestration Tools --> 
+   Docker Swarm,
+   Kubernetes,
+   OpenShift
+
+Kubernetes:
+  10 years 
+  July 2015  --- 2023  = 8years  
+
+chartGPT started in 2023.     
+
+
+kubernetes architecture:
+controlPlane/MasterNodes:
+  apiServer
+  etcd  
+  scheduler  
+  controllerManagers   
+workerNodes:
+  kubelet   
+  container runtime [Container-d]
+  kube-proxy
+
+kubernetes-client:
+  kubectl  
+      kubectl create/delete/get/describe/apply/run/expose 
+      kubeconfig [.kube/config ] file will authenticate the admin  
+                                 the caller admin/Developer/Engineer  
+  ui  
+  api  
+
+ docker run/build  pull push 
+
+
+kubernetes: 
+   cluster:
+   nodes:  
+   pods:  
+   containers :  
+
+cluster ---> nodes ---> pods  ---> containers  :
+
+kubernetes security - RBAC:
+  Developers [ Paul, Joyce, Chidi ] 
+  Engineers  [ James, Dominion, Janet ] 
+
+authentication via kubeconfig : 
+authorisation via RBAC:
+
+Installation:
+============
+Local K8s Cluster(Single Node K8s Cluster)
+------------------------------------------
+   minikube
+       choco install minikube  = windows   
+       brew install minikube   = macOS  
+       minikube start  
+   Kind   = 
+   Docker Desktop 
+      https://docs.docker.com/desktop/kubernetes/
+  POC = 
+
+Multi Node Kubernetes Clusters:
+================================
+1. Self Managed Kubernetes [k8s] Cluster = IaaS--EC2  :
+    kubeadm --> We can setup multi node k8's cluster using kubeadm.
+    kubespray --> We can setup multi node k8s cluster using kubespray
+     (Ansbile Playbooks Used internally by kubespray).
+
+WITH  Self Managed Kubernetes [k8s] Cluster both the    
+     controlPlane [apiServer, etcd, scheduler, Controller Managers] 
+      and 
+     workerNodes [  kubelet, containerRuntime-Container-d, kube-proxy]  
+  
+  are managed by the Admin/Kubernetes/DevOps Engineers
+
+2. Managed k8s Cluster  (Cloud Services) = PaaS  : 
+   The controlPlane is managed by a cloud provider or third party.  
+   The controlPlane and all it components are managed by the Cloud provider 
+   EKS --> Elastic Kubernetes Service(AWS)
+   AKS --> Azure Kubernetes Service(Azure)
+   GKE --> Google Kubernetes Engine(GCP)
+   IKE --> IBM K8s Engine(IBM Cloud)
+
+Kubernetes Cluster = k8s  
+
+3. KOPS: is a software use to create production GRADE/ready k8s in AWS and  
+         azure for the kops beta version  
+         It creates a highly available kubernetes services in Cloud like AWS.
+            KOPS will leverage Cloud Sevices like:
+              vpc, 
+              AutoScaling Groups, 
+              LoadBalancer, 
+              Launch Template/configuration
+              ec2-instances nodes [workerNodes and masterNodes]  
+
+   kops create cluster --name mycluster --az us-east-2b nodes-4 master 3    
+
+    iam role/user  
+
+Rancher: - Using Rancher we can deploy both managed and self managed k8s
+           Rancher serves as a glass to access and manage multiple k8s  
+           from the dashboard [UI]  - rancher dashboard 
+           authentication and authorisation: EKS/AKS/GKE/IKE 
+
+Ticket 001:
+  Setup a multi nodes self Managed kubernetes cluster using kubeadm.
+  requirements -- 
+1. check the kubernetes official documentation  
+https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/
+
+2. check the company's documentation for kubeadm setup  
+https://github.com/LandmakTechnology/package-management/blob/master/kubeadm/READme.md
+
+kubeadm join 172.0.0.11:6443 --token a6hasz.8gav6h5wjy1jy4ca --discovery-token-ca-cert-hash sha256:da32d4d637fa0f9769cd21b90273ba796fb09fb0be08e16a795a68a55bb9846f
+
+docker resources/objects use to deploy applications:
+  Dockerfiles/images/networks/volumes/docker-compose.yml/etc.  
+
+ticket002
+========
+Deploy workloads in kubernetes;
+
+kubernetes resources/objects used to deploy application includes:
+kubernetes Orchestrate and managed containerised Applications  
+This applications run as containers  
+These containers are housed in pods  
+Pods are housed in nodes    
+nodes are housed in the cluster   
+
+kubernetes resources/objects used to deploy application include is:
+    Pod or    :
+    controllerManagers:
+      Replication Controller
+      ReplicaSet
+      DaemonSet
+      StatefulSets
+      Deployment
+      Volume
+      Job       
+
+Exposing/accessing applications = Service Discovery:
+    Service Types:
+    ClusterIP
+    NodePort
+    LoadBalancer
+    ExternalName  
+  ingress 
+  networkPolicy 
+
+Namespace:
+  It is a virtual cluster inside your cluster 
+  [ dev / uat / prod ], [sales, accounts, cs, payroll]
+  pros:
+    isolation  
+    permissions 
+       dev  - Developers
+       prod - Engineers
+    resource utilisation  
+       dev  - cpu=5Gi mem=1000Mi 
+       prod - cpu=25Gi mem=8000Mi 
+    performance
+       High priority   
+
+RBAC - Security:
+  NameSpace
+  Role   = dev [list/read]
+  RoleBinding  
+         Users  
+         groups  
+         ServiceAccounts  
+  ClusterRole  
+  ClusterRoleBinding
+  ServiceAccounts  
+
+Namespace:
+  fintech / 
+  ecommerce 
+
+kubernetes uses the kubectl client or the UI to run workloads.
+  kubectl get namespace
+  kubectl get ns
+
+ubuntu@master:~$ kubectl get ns
+NAME              STATUS   AGE
+default           Active   41m
+kube-node-lease   Active   41m
+kube-public       Active   41m
+kube-system       Active   41m
+
+ubuntu@master:~$ kubectl get nodes
+NAME     STATUS   ROLES           AGE   VERSION
+master   Ready    control-plane   42m   v1.27.4
+node1    Ready    <none>          37m   v1.27.4
+node2    Ready    <none>          25m   v1.27.4
+ubuntu@master:~$
+ubuntu@master:~$ kubectl get pod -A
+NAMESPACE     NAME                             READY   STATUS    RESTARTS      AGE
+kube-system   coredns-5d78c9869d-26tvd         1/1     Running   0             42m
+kube-system   coredns-5d78c9869d-s7ml5         1/1     Running   0             42m
+kube-system   etcd-master                      1/1     Running   0             42m
+kube-system   kube-apiserver-master            1/1     Running   0             42m
+kube-system   kube-controller-manager-master   1/1     Running   0             42m
+kube-system   kube-proxy-5n22s                 1/1     Running   0             37m
+kube-system   kube-proxy-f8f4m                 1/1     Running   0             25m
+kube-system   kube-proxy-jxt5x                 1/1     Running   0             42m
+kube-system   kube-scheduler-master            1/1     Running   0             42m
+kube-system   weave-net-5zvgj                  2/2     Running   1 (41m ago)   41m
+kube-system   weave-net-8wtjl                  2/2     Running   0             37m
+kube-system   weave-net-wb844                  2/2     Running   0             25m
+ubuntu@master:~$
+
+https://kubernetes.io/docs/setup/best-practices/cluster-large/
+   No more than 110 pods per node
+   No more than 5,000 nodes
+   No more than 150,000 total pods
+   No more than 300,000 total containers
+
+kubectl get namespaces
+kubectl get ns   
+
+-#Create Name Space Using Imperative Command
+    kubectl create namespace <nameSpaceName>
+    kubectl create namespace dev  
+
+-declarive approach
+-# Using Declarative Manifest file 
+
+apiVersion: v1   
+kind: Namespace      
+metadata:
+  name: prod 
+================
+
+PODS:
+====
+POD --> Pod is the smallest building block which we can deploy applications in k8s.
+Pod represents running process. Pod can contains one or more containers.
+These container will share same network, storage and any other specifications.
+Pod will have unique IP Address in k8s cluster. 
+
+Pods
+ SingleContainerPods --> Pod will have only one container.       98%
+ 
+ MultiContainerPods(SideCar) --> POD with two or more containers. 2%  
+         application Container  
+         SideCar containers:
+         logMgt  container  
+         utility Container [ Truck = ]
+
+How to deploy run/execute tasks/workloads in kubernetes??
+   1. Imperative  approach 
+        By using commands 
+
+   2. Declarative approach
+        By using files [manifests files]  
+
+-# Create POD Using Command
+kubectl run <podName> --image=<imageName> --port=<containerPort> -n <namespaceName>
+kubectl run hello --image=mylandmarktech/hello --port=80 -n dev  
+
+Docker images = dockerHub other registries:
+-- python-web-app
+   nodeweb-app 
+   net-webapp 
+   mylandmarktech/hello
+   nginx 
+   mysql  
+   mongo  
+   jenkins  
+   sonarqube  
+   nexus 
+
+
+Use the declarive approach to deploy workloads in kubernetes:
+  Manifest files = kams 
+Manifest files are written in yaml/yml language 
+
+key:values pairs:  
+  name: simon  
+dictionary: number of key:values pairs:    
+   name: simon   
+   age: 50  
+   sex: male  
+list:
+   students:
+      - name: paul  
+        age: 55  
+        sex: male  
+      - name: juliet
+        age: 65 
+        sex: female         
+
+pod.yml template
+======
+apiVersion: v1    
+kind: Pod     
+metadata:
+  name: <podName>
+  namespace: <namespaceName>
+  lables:
+    key: <value> 
+    key: <value> 
+spec:
+  containers:
+  - name: containerName   
+    image: imageName  
+    ports:
+    - containerPort: podNumber  
+
+pod.yml   = kams   
+======
+kind: Pod    
+apiVersion: v1    
+metadata:
+  name: webapp    
+  namespace: dev    
+  labels:
+    app: webapp   
+    tier: fe    
+spec:
+   containers:
+   - name: web   
+     image: mylandmarktech/maven-web-app 
+     ports:
+     - containerPort: 8080  
+
+kubectl config set-context --current --namespace=dev
+
+kubectl get all
+kubectl get events
+kubectl delete all --all 
+kubectl delete all --all -n dev     
+kubectl delete pod --all
+kubectl get pods 
+kubectl get pods -o yaml  
+kubectl get pods --show-labels
+kubectl get pods -o wide
+kubectl get pods -o wide --show-labels
+
+kubectl  describe pod <podName>
+kubectl  describe pod <podName> -n <namespace>
+
+
+kubeadm reset  
+sudo hostnamectl set-hostname master
+kubectl init    
+-#Generate the master join token on the master node
+kubeadm token create --print-join-command
+
+==================================================================================================================================================================
+
+
+
+pod.yml   = kams   
+======
+kind: Pod    
+apiVersion: v1    
+metadata:
+  name: webapp    
+  namespace: dev    
+  labels:
+    app: webapp   
+    tier: fe    
+spec:
+   containers:
+   - name: web   
+     image: mylandmarktech/maven-web-app 
+     ports:
+     - containerPort: 8080  
+
+kubectl config set-context --current --namespace=dev
+
+kubectl get all
+kubectl get events
+kubectl delete all --all 
+kubectl delete all --all -n dev     
+kubectl delete pod --all
+kubectl get pods 
+kubectl get pods -o yaml  
+kubectl get pods --show-labels
+kubectl get pods -o wide
+kubectl get pods -o wide --show-labels
+
+kubectl  describe pod <podName>
+kubectl  describe pod <podName> -n <namespace>
+
+
+kubeadm reset  
+sudo hostnamectl set-hostname master
+kubectl init    
+-#Generate the master join token on the master node
+kubeadm token create --print-join-command
+
+ubuntu@master:~$ kubectl get pods --show-labels
+NAME     READY   STATUS    RESTARTS   AGE    LABELS
+hello    1/1     Running   0          4d1h   run=hello
+webapp   1/1     Running   0          4d1h   app=webapp,tier=fe
+
+kubectl run hello --image=mylandmarktech/hello --port=80 -n dev  
+
+ServiceDicovery:
+===============
+ClusterIP is the default kubernetes service type that support communication  
+within the cluster.  
+kams  
+service.yml  -- kams   
+===========
+hello-appSVC.yml    
+kind: Service  
+apiVersion: v1     
+metadata:
+   name: hellosvc  
+spec:
+   type: ClusterIP  
+   selector:
+      run: hello  
+   ports:
+   - port: 80    
+     targetPort: 80     
+---  
+kind: Service  
+apiVersion: v1     
+metadata:
+   name: webappsvc  
+spec:
+   type: NodePort    
+   selector:
+      app: webapp  
+   ports:
+   - port: 80    
+     targetPort: 8080   
+     nodePort: 31000 [30000 - 32676]   
+
+
+kubectl get svc -n <namespace>
+kubectl describe svc  
+kubectl get ep  
+kubectl describe svc   
+kubectl delete svc   
+
+kubernetes Service:
+  In Kubernetes Service makes our pods accessible/discoverable 
+  within the cluster or exposing them outside  the cluster.
+  service will identify pods using it's labels And Selector. 
+  Whenever we create a service a ClusterIP (virtual IP) Address 
+  will be allocated for that serivce and DNS entry will be created for that IP.
+  So internally we can access using service name(DNS).
+
+ helloappsvc ----> helloapp  
+
+
+What is FQDN?
+Fully Qualified Domain name. 
+If one POD need to access service & which are in different names space 
+we have to use FQDN of the service.
+Syntax: <serivceName>.<namespace>.svc.cluster.local
+ex: myappsvc.dev.svc.cluster.local
+
+ubuntu@master:~$ kubectl get svc -o wide
+NAME        TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE   SELECTOR
+hellosvc    ClusterIP   10.101.221.91   <none>        80/TCP         12m   run=hello
+webappsvc   NodePort    10.111.41.117   <none>        80:31000/TCP   12m   app=webapp
+
+serviceNAME  = hellosvc   
+service FQDN = hellosvc.dev.svc.cluster.local
+
+curl hellosvc.dev.svc.cluster.local  
+
+For pods to be recraete the must be managed/controlled by:
+   1. ControllerManagers  
+   2. kubelet SERVICE - manages & maintained the state of static pods  
+
+IQ: what is Static Pods ?
+    Static Pods are controlled by the kubelet service  
+
+
+sudo vi /etc/kubernetes/manifests/file.yml  
+kams  
+kind: Pod    
+apiVersion: v1   
+metadata: 
+   name: myapp 
+spec:   
+   containers:
+      - name: myapp   
+        image: mylandmarktech/java-web-app   
+        ports:
+        - containerPort: 8080  
+
+NB:
+We should not create pods directly to deploy applications.
+If a node  goes down in which pods are running, Pods will not be rescheduled.
+We have to create pods with help of controllers which manages POD life cycle.
+
+controllerManagers:
+  ReplicationControllers 
+  ReplicaSets, 
+  Deployments, 
+  DaemonSets  
+
+A workload is an application running on Kubernetes consisting of a single component 
+or several components that work together inside a set of pods. 
+In Kubernetes, a Pod represents a set of running containers on your cluster.
+
+Kubernetes pods have a defined lifecycle. 
+For example, once a pod is running in your 
+cluster and the node hosting the pod fails then pods running on the node will fail. 
+Kubernetes treats that level of failure as final. 
+You would need to create a new Pod to recover,even if the node later becomes healthy.
+
+ReplicationControllers = rc 
+==========================   = kams     
+kind: ReplicationController  
+apiVersion: v1    
+metadata: 
+  name: apprc  
+  namespace: dev  
+  labels: 
+    app: fe     
+spec:
+   selector:
+      app: webapp  
+   replicas: 2
+   template: podTemplate
+     metadata:
+       name: app  
+       labels:
+         app: webapp     
+     spec:
+       containers:
+       - name: web
+         image: mylandmarktech/hello 
+         ports:
+         - containerPort: 80   
+
+
+labels:    app: webapp   = address: gra  
+selectors: app: webapp   = address: gra  
+
+kubectl apply -f <filename.yml>
+kubectl apply -f rc.yml
+kubectl get rc 
+kubectl get rc -n <namespace>
+kubectl get all
+kubectl scale rc <rcName> --replicas <noOfReplicas>
+kubectl scale rc apprc --replicas 4  
+
+kubectl describe rc <rcName>
+kubectl delete rc <rcName>
+
+ curl 34.219.16.213:30000
+
+kubectl scale pod app --replicas 4 
+kubectl scale rc apprc --replicas 1
+kubectl scale rc apprc --replicas 4  
+kubectl delete rc apprc
+
+  90:10PM
+
+ReplicaSet = RS :
+==========
+What is difference b/w replicaset and replication controller?
+
+RS is the next generation of replication controll The only difference as now is
+the selector support.
+
+RC --> Supports only equality based selectors.
+key == value(Equal Condition)
+selector:
+    app: javawebapp
+    tier: fe    
+    client: tesla  
+
+RS --> Supports eqaulity based selectors and also set based selectors.  
+eqaulity based:
+key == value(Equal Condition)  
+set based:
+  key in [ value1, value2, value3 ]
+
+selector:
+   matchLabels:   -# Equality Based
+    key: value
+    app: javawebapp
+    tier: fe    
+    client: tesla
+
+   matchExpressions: -# Set Based
+   - key: app
+     operator: in
+     values:
+     - javawebpp
+     - myapp  
+     - fe  
+
+rs.yml  = kams 
+--------------
+kind: ReplicaSet
+apiVersion: apps/v1  
+metadata : 
+   name: rsName  
+spec:
+   replicas: noOfReplicas  
+   selector:
+      matchLabels:
+         <key>: <value>
+         <app>: myapp  
+      matchExpressions:
+      - key: <key>
+        operator: <in / not in>
+        values:
+        - <value1>
+        - <value2>
+        - <value3>
+   template:
+     metadata:
+       name: podName
+       labels:
+         <key1>: <value1>
+         <key2>: <value2>     
+     spec:  
+       containers: 
+       - name: <containerName>
+         image: <imageName:tag>
+         ports:
+         - containerPort: containerPortNumber  
+---
+kind: ReplicaSet
+apiVersion: apps/v1   
+metadata:
+  name: webrs  
+spec:
+  selector: 
+    matchLabels:
+      app: web 
+  replicas: 2   
+  template:
+    metadata:
+      name: webapp  
+      labels:
+        app: web  
+    spec:
+      containers:
+      - name: web 
+        image: mylandmarktech/python-flask-app:2    
+        ports:
+        - containerPort: 5000      
+
+nodes.yml  
+==========
+kind: ReplicaSet
+apiVersion: apps/v1  
+metadata:
+   name: noders  
+spec:
+   replicas: 1 
+   selector:
+      matchLabels:
+         app: node   
+   template:
+      metadata:
+        name: nodeapp  
+        labels:
+          app: node   
+      spec:
+         imagePullSecrets:
+         - name: dockerhublogin
+         containers:  
+         - name: nodeapp   
+           image: mylandmarktech/nodejs-fe-app  
+           ports:
+           - containerPort: 9981   
+---
+kind: Service
+apiVersion: v1  
+metadata:
+  name: nodesvc  
+spec:
+  type: NodePort  
+  selector:
+    app: node 
+  ports:
+  - targetPort: 9981
+    ports: 80 
+    nodePort: 31500
+
+kubectl create secret docker-registry regcred
+ --docker-server=<your-registry-server> 
+ --docker-username=<your-name> 
+ --docker-password=<your-pword>
+ --docker-email=<your-email>
+
+
+kubectl create secret docker-registry dockerhublogin \
+    --docker-server=docker.io --docker-username=mylandmarktech \
+    --docker-password=admin123  
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: private-reg
+spec:
+  containers:
+  - name: private-reg-container
+    image: <your-private-image>
+  imagePullSecrets:
+  - name: regcred
+
+
+kubectl get rs 
+kubectl get rs -n <namespace>
+kubectl get all
+kubectl scale rs <rsName> --replicas <noOfReplicas>
+
+kubectl describe rs <rsName>
+kubectl delete rs <rsName>
+
+kubectl scale rs nodeapp --replicas 3 
+
+  landmarktechnologies
+
+   http://34.219.16.213:31500/landmarktechnologies
+
+    http://34.219.16.213:32000
+
+DaemonSet:
+==========
+https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/
+4 nodes  =    
+
+
+- pod short lifecycle is = how   
+  imagePullBackup error - causes:
+    - authentication required for private registry   
+    - wrong image registry  
+        mylandmarktech/hello  --- mylandmarktech/helo  
+    - wrong image tag =  mylandmarktech/hello:5  mylandmarktech/hello:55    
+  How to add secrets -- 
+
+
+ports:
+   nodePort that ranges from 30000 - 32676  
+   servicePort = port = 80  
+   containerPort = 80 = targetPort=80  
+
+   nodePort  vs NodePort service 
+
+kams 
+
+kind: ReplicaSet 
+apiVersion: apps/v1   
+metadata:
+  name: myrs    
+spec: 
+   selector:
+      matchLabels:
+         app: be     
+   template:
+      metadata:
+         name: app  
+         labels:
+            app: be  
+      spec:
+         imagePullSecrets:
+         - name: logindocker  
+         containers:
+         - name: javawebapp  
+           image: mylandmarktech/java-web-app   
+           ports:
+           - containerPort: 8080 
+
+kubectl create secret docker-registry logindocker \
+    --docker-server=docker.io --docker-username=mylandmarktech \
+    --docker-password=admin@123 
+
+=========================================
+
+DaemonSet:
+==========
+https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/
+4 nodes  =    
+
+ds.yml  = kams 
+-=====--------
+kind: DaemonSet    
+apiVersion: apps/v1    
+metadata:
+  name: <RSName> 
+  labels:
+    <key>: <value> 
+spec:
+  selector:
+    matchLabels:
+      <key>: value           
+    matchExpressions:
+    - key: <key>
+      operator: <in /not in>  
+      values: 
+      - <value1> 
+      - <value3>      
+  template:
+    metadata:
+      name: podName  
+    labels:
+      <key>: <vales>  
+    spec:
+      containers:
+      - name: containerName
+
+hello_ds.yml   
+================
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: logmgt
+spec:
+  selector:
+    matchLabels:
+      app: hello
+  template:
+    metadata:
+      name: hello
+      labels:
+        app: hello
+    spec:
+      containers:
+      - name: hello
+        image: mylandmarktech/hello
+        ports:
+        - containerPort: 80
+
+k8s--->nodes--->pods---->Containers:
+  How can we deploy containerised applications in k8s?
+  We use kubernetes objects to deploy workloads in kubernetes:
+  1. Pods --- 
+        scaling is not supported  
+        lifecycle is very short  
+        lacks self-healing capacities
+    controllerManagers:
+  2. ReplicationControllers  
+       kubectl scale rc/rs/deploy  
+  3. ReplicaSets
+  4. DaemonSets
+  5. Deployment  
+  6. StatefulSets 
+
+1. Deploy an application which must have a pod running in each = ds  
+     logMgt / logshipper  
+2. Deploy an application with scaling capacities = rc/rs/Deployment/sts  
+3. Deploy an application with scaling capacities = pod  
+
+Master node is tainted / taint  
+=============================  
+  -- recommissioning / upgrades / updates / patching  
+
+
+node1    Ready 
+
+kubectl taint nodes node1 key1=value1:NoSchedule
+
+hello-ds.yml  
+===========
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: logmgt
+spec:
+  selector:
+    matchLabels:
+      app: hello
+  template:
+    metadata:
+      name: hello
+      labels:
+        app: hello
+    spec:
+      tolerations:
+      - operator: Exists
+        effect: "NoSchedule"
+      containers:
+      - name: hello
+        image: mylandmarktech/hello
+        ports:
+        - containerPort: 80
+
+Master node is tainted / taint  
+=============================  
+  -- recommissioning / upgrades / updates / patching  
+
+kubectl taint nodes node1 key1=value1:NoSchedule     [taint the node]
+kubectl taint nodes node1 key1=value1:NoSchedule-   [untaint the node]
+
+sudo vi /etc/kubernetes/manifests/
+
+imperative  
+declarative
+
+kubectl apply -f rc.yml 
+
+kubectl apply -f <ds-filename.yml>
+kubectl get ds 
+kubectl get ds -n <namespace>
+kubectl get all
+
+kubectl describe ds <dsName>
+kubectl delete ds <dsName>
+
+kubectl get/describe/delete/edit/apply/  
+
+==============================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
