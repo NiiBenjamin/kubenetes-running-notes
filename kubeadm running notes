@@ -1363,6 +1363,390 @@ spec:
            ports: 
            - containerPort: 80 
 
+Deployments  :
+    strategy [ReCreate and RollingUpdates]
+    techniques [Blue/Green, Canary]
+
+Resource, requests and limits:
+--------------------------
+--------------------------
+Requests and limits are the mechanisms Kubernetes uses to control resources
+such as CPU and memory. 
+Requests are what the container is guaranteed to get. 
+If a container requests a resource, 
+Kubernetes will only schedule it on a node that can give it that resource.
+
+Limits, on the other hand, make sure a container never goes above a certain value. 
+The container is only allowed to go up to the limit, and then it is restricted.
+
+Resoruce request:
+---------------
+A request is the amount of that resources that the system 
+will guarantee for the container, and Kubernetes will use this value 
+to decide on which node to place the pod. 
+
+Resource Limit:
+A limit is the maximum amount of resources that 
+Kubernetes will allow the container to use.
+
+Cluster = node1[mem=4000Mi/32Mi]    cpu[8000m/4000m]     :
+          node2[mem=4000Mi/2200Mi]  cpu[16000m/12000m]
+          node11[mem=4000Mi/2200Mi] cpu[16000m/12000m]
+pod2.yml -- nodes/pods  
+========
+apiVersion: v1
+kind: Pod
+metadata: 
+  name: javawebapp   
+spec:
+  containers:
+  - name: javawebapp 
+    image: mylandmarktech/java-web-app   
+    ports:
+    - containerPort: 8080   
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "500m"          
+      limits:
+        memory: "512Mi"
+        cpu: "1000m"
+
+kubectl top pods  
+kubectl top nodes   
+
+
+Horizontal Pod AutoScaling  - HPA  :
+==================================
+POD AutoScaling --> Kuberenets POD AutoScaling Will make sure u have minimum number 
+pod replicas available at any time & based on the observed CPU/Memory utilization
+on pods it can scale PODS.
+HPA Will Scale up/down pod replicas of Deployment/ReplicaSet/ReplicationController 
+based on observerd CPU & Memory utilization base the target specified. 
+
+What is difference b/w Kubernetes AutoScaling(POD AutoScaling) & AWS AutoScaling?
+
+
+  aws  
+  AutoScaling Group = ASG
+     minimum   10      20 [81%]  21
+     desired   10      20 [75%]
+     maximum   100 
+
+  ScalingPolicy:
+     memory utilization
+       cpu -gt 80% 
+       cpu -lt 40%     
+     cpu utilization
+difference b/w Kubernetes AutoScaling(POD AutoScaling) 
+                   & AWS AutoScaling?
+
+app2.yml  
+=======
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: webapp
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: tesla
+  template:
+    metadata:
+      name: webapp
+      labels:
+        app: tesla
+    spec:
+      containers:
+      - name: app
+        image: mylandmarktech/maven-web-app
+        resources:
+          requests:
+            cpu: "1000"
+            memory: "256Mi"
+          limits:
+            cpu: "1000"
+            memory: "256Mi"
+        ports:
+        - containerPort: 8080
+
+error: Metrics API not available
+    kubernetes addons/plugins:
+      Metrics Server
+
+Configure a Metrics Server on our Cluster4??
+===========================================
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+
+
+wget https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+
+
+https://github.com/LandmakTechnology/metric-server
+git clone https://github.com/LandmakTechnology/metric-server
+kubectl apply -f metric-server/metrics-server-deploy.yml
+=====================================================
+ubuntu@master:~/tesla$ kubectl apply -f metric-server/metrics-server-deploy.yml
+serviceaccount/metrics-server created
+clusterrole.rbac.authorization.k8s.io/system:aggregated-metrics-reader created
+clusterrole.rbac.authorization.k8s.io/system:metrics-server created
+rolebinding.rbac.authorization.k8s.io/metrics-server-auth-reader created
+clusterrolebinding.rbac.authorization.k8s.io/metrics-server:system:auth-delegator created
+clusterrolebinding.rbac.authorization.k8s.io/system:metrics-server created
+service/metrics-server created
+deployment.apps/metrics-server created
+apiservice.apiregistration.k8s.io/v1beta1.metrics.k8s.io created
+ubuntu@master:~/tesla$
+
+metrics-server:
+  nodes  
+  pods 
+
+RBAC objects:
+  serviceaccount metrics-server 
+     - user  
+     - groups 
+     - pods     
+  clusterrole
+     - pods/nodes [get/watch/list] 
+  clusterrolebinding
+     - 
+  rolebinding
+
+Deployment with HPA
+==================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hpadeployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      name: hpapod
+  template:
+    metadata:
+      labels:
+        name: hpapod
+    spec:
+      containers:
+        - name: hpacontainer
+          image: k8s.gcr.io/hpa-example
+          ports:
+          - name: http
+            containerPort: 80
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "64Mi"
+            limits:
+              cpu: "100m"
+              memory: "256Mi"
+---
+apiVersion: autoscaling/v2 
+kind: HorizontalPodAutoscaler  
+metadata:
+  name: hpadeploymentautoscaler 
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment 
+    name: hpadeployment
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 40
+  - type: Resource
+    resource:
+     name: memory
+     target:
+      type: Utilization
+      averageUtilization: 40
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hpaclusterservice
+  labels:
+    name: hpaservice
+spec:
+  ports:
+    - port: 80
+      targetPort: 80
+  selector:
+    name: hpapod
+  type: ClusterIP
+
+-# Create temp POD using below command interatively and increase the 
+-# load on demo app by accessing the service.
+
+kubectl run -i --tty load-generator --rm  --image=busybox /bin/sh
+
+-# Access the service to increase the load.
+
+while true; do wget -q -O- http://hpaclusterservice; done  
+
+-# Java Web Appliction With HPA
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp
+spec:
+  selector:
+    matchLabels:
+      app: javawebapp
+  template:
+    metadata:
+      name: javawebapppod
+      labels:
+        app: javawebapp
+    spec:
+      containers:
+      - name: myapp
+        image: mylandmarktech/java-web-app
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            cpu: 300m
+            memory: 256Mi
+          limits:
+            cpu: 400m
+            memory: 512Mi
+
+Vertical Pod AutoScaling : 
+Horizontal Pod AutoScaling  :
+Cluster AutoScaling:
+
+https://github.com/LandmakTechnology/spring-boot-docker
+-# Spring App & Mongod DB as POD without volumes
+Stateless applications deployment:
+  Use deployment as the choice kubernetes object  
+  ReplicaSets/ReplicationController:  
+
+mongo database:
+===============
+  use StatefulSets as the choice kubernetes object for Stateful  
+  application deployments   
+  ReplicaSets/ReplicationController/deployment
+
+Stateless
+--- springapp.yml/
+    springapp-deployment.yml   
+    springapp-svc.yml  
+    secret.yml 
+    configMap.yml       
+
+Stateful
+--- mongo.yml/
+    mongo-rs.yml  or  mongo-statefulset.yml / 
+    mongo-svc.yml 
+    persistenvolume.yml  
+    persistenvolumeclaim.yml
+    secret.yml 
+    configMap.yml       
+---
+
+  mongodb:
+      host: ${MONGO_DB_HOSTNAME}
+      port: 27017
+      username: ${MONGO_DB_USERNAME}
+      password: ${MONGO_DB_PASSWORD}
+      database: users
+      authentication-database: admin
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: springapp
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: springapp
+  template:
+    metadata:
+      labels:
+        app: springapp
+    spec:
+      containers:
+      - name: springappcontainer
+        image: mylandmarktech/spring-boot-mongo
+        ports:
+        - containerPort: 8080
+        env:
+        - name: MONGO_DB_HOSTNAME
+          value:  mongosvc
+        - name: MONGO_DB_USERNAME
+          value: devdb
+        - name: MONGO_DB_PASSWORD
+          value: devdb@123
+        resources:
+          requests:
+            cpu: 200m
+            memory: 256Mi
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: springappsvc
+spec:
+  type: NodePort
+  selector:
+    app: springapp
+  ports:
+  - port: 80
+    targetPort: 8080
+
+appsvc---pod:8080   
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: mongodb
+spec:
+  selector:
+    matchLabels:
+      app: mongo
+  template:
+    metadata:
+      name: myapp
+      labels:
+        app: mongo
+    spec:
+      containers:
+      - name: mongodbcontainer
+        image: mongo
+        ports:
+        - containerPort: 27017
+        env:
+        - name: MONGO_INITDB_ROOT_USERNAME
+          value: devdb
+        - name: MONGO_INITDB_ROOT_PASSWORD
+          value: devdb@123
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongosvc
+spec:
+  type: ClusterIP
+  selector:
+    app: mongo
+  ports:
+  - port: 27017
+    targetPort: 27017
+
+Kubernetes volumes:
+==================    = kubernetes 9 and 10  
 
 
 
