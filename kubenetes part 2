@@ -1,0 +1,383 @@
+Kubernetes volumes:
+==================
+HostPath: ReplicaSet  
+
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: mongodb
+spec:
+  selector:
+    matchLabels:
+      app: mongo
+  template:
+    metadata:
+      name: myapp
+      labels:
+        app: mongo
+    spec:  
+      volumes:
+      - name: mogodbhostvol
+        hostPath:
+          path: /mongodata
+      - name: vol2 
+        hostPath:
+          path: /tmp/data  
+      Containers:  
+      - name: mongodbcontainer
+        image: mongo
+        ports:
+        - containerPort: 27017
+        env:
+        - name: MONGO_INITDB_ROOT_USERNAME
+          value: devdb
+        - name: MONGO_INITDB_ROOT_PASSWORD
+          value: devdb@123
+        volumeMounts:
+        - name: mogodbhostvol
+          mountPath: /data/db
+        - name: vol2 
+          mountPath: /data/db        
+
+docker run -v data:/data/db -v data2:/data/db 
+
+awsElasticBlockStore 
+azureDisk
+azureFile 
+configMap 
+emptyDir g
+cePersistentDisk
+gitRepo (deprecated) 
+hostPath
+nfs 
+persistentVolumeClaim 
+secret
+
+Kind: Pod   
+apiVersion: v1   
+metadata:
+  name: mysql    
+spec:
+  volumes:
+  - name: mogodbhostvol
+    hostPath
+    nfs 
+    awsElasticBlockStore 
+    azureDisk
+    azureFile 
+    configMap 
+    emptyDir 
+    gcePersistentDisk
+    gitRepo (deprecated) 
+    persistentVolumeClaim 
+    secret         
+
+mongo-hostpath.yml  
+==================
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: mongodb
+spec:
+  selector:
+    matchLabels:
+      app: mongo
+  template:
+    metadata:
+      name: myapp
+      labels:
+        app: mongo
+    spec:
+      containers:
+      - name: mongodbcontainer
+        image: mongo
+        ports:
+        - containerPort: 27017
+        env:
+        - name: MONGO_INITDB_ROOT_USERNAME
+          value: devdb
+        - name: MONGO_INITDB_ROOT_PASSWORD
+          value: devdb@123
+        volumeMounts:
+        - name: mogodbhostvol
+          mountPath: /data/db
+      volumes:
+      - name: mogodbhostvol
+        hostPath:
+          path: /mongodata
+
+Configuration of NFS Server
+===========================
+
+Step 1: 
+
+Create one Server for NFS
+
+Install NFS Kernel Server in 
+Before installing the NFS Kernel server, we need to update our system’s 
+repository index with that of the Internet through the following apt command as sudo:
+
+mongo-nfs.yml  
+==================
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: mongodb
+spec:
+  selector:
+    matchLabels:
+      app: mongo
+  template:
+    metadata:
+      name: myapp
+      labels:
+        app: mongo
+    spec:
+      volumes:
+      - name: mongodbvol
+        nfs:
+          server: 10.0.0.7
+          path: /mnt/share
+      containers:
+      - name: mongodbcontainer
+        image: mongo
+        ports:
+        - containerPort: 27017
+        env:
+        - name: MONGO_INITDB_ROOT_USERNAME
+          value: devdb
+        - name: MONGO_INITDB_ROOT_PASSWORD
+          value: devdb@123
+        volumeMounts:
+        - name: mongodbvol
+          mountPath: /data/db
+
+Persistent volumes 
+===================
+
+deploy a kubernetes using Kops  
+
+10:25am - 11:45am 
+
+PV --> It's a piece of storage (hostPath, nfs,ebs,azurefile,azuredisk) in k8s cluster. 
+PV exists independently from from pod life cycle form which it is consuming.
+
+PersistentVolumeClaim -->
+   It's request for storage(Volume).Using PVC we can request(Specify) 
+   how much storage u need and with what access mode u need.
+        
+Persistent Volumes are provisioned in two ways, Statically or Dynamically.:
+
+1) Static Volumes (Manual Provisionging)
+    A k8's Administrator can create a PV manually so that pv's can be available for PODS which requires.
+    Create a PVC so that PVC will be attached PV. We can use PVC with PODS to get an access to PV. 
+
+2) Dynamic Volumes (Dynamic Provisioning)
+     It's possible to have k8s provision(Create) volumes(PV) as required. 
+     Provided we have configured A storageClass [sc].
+     So when we create PVC if PV is not available Storage Class will Create PV dynamically.
+   
+PVC: If pod requires access to storage(PV),it will get an access using PVC. PVC will be attached to PV.
+
+PersistentVolume – the low level representation of a storage volume.
+PersistentVolumeClaim – the binding between a Pod and PersistentVolume.
+Pod – a running container that will consume a PersistentVolume.
+StorageClass – allows for dynamic provisioning of PersistentVolumes.
+
+PV Will have Access Modes:
+============================
+ReadWriteOnce – the volume can be mounted as read-write by a single node = EBS 
+ReadOnlyMany  – the volume can be mounted read-only by many nodes
+ReadWriteMany – the volume can be mounted as read-write by many nodes = NFS 
+
+   ebs / nfs-efs 
+
+Claim Policies
+================
+A Persistent Volume Claim can have several different claim policies associated with it including
+Retain – When the claim(PVC) is deleted, the volume(PV) will exists.
+Recycle – When the claim is deleted the volume remains but in a state where the data can be manually recovered.
+Delete – The persistent volume is deleted when the claim is deleted.
+
+The claim policy (associated at the PV and not the PVC) is responsible for what happens to the data when the claim is deleted.
+
+kubectl exec -it mongodb-6hs5v  -- bash
+mongosh -u devdb -p devdb@123 localhost:27017
+show databases;
+use users;
+show collections; 
+use users;
+switched to db users
+users> show collections;
+users
+users> db.users.find();
+
+
+https://www.mongodb.com/docs/manual/replication/
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-nfs-pv1
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: <nfs server ip>
+    path: "/mnt/share"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-nfs-pv1
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 500Mi
+---
+pv-pvc-mongo-hostpath.yml  
+=========================
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-hostpath
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 1Gi
+  accessModes:
+  - ReadWriteOnce
+  hostPath:
+    path: "/kube"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-hostpath
+spec:
+  storageClassName: manual
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+---
+pv-pvc-hostpath.yml   
+==================
+# Mongo db pod with PVC
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: mongodbrs
+spec:
+  selector:
+    matchLabels:
+      app: mongodb
+  template:
+     metadata:
+       name: mongodbpod
+       labels:
+         app: mongodb
+     spec:
+       volumes:
+       - name: mongodb-pvc
+         persistentVolumeClaim:
+           claimName: pvc-hostpath
+       containers:
+       - name: mongodbcontainer
+         image: mongo
+         ports:
+         - containerPort: 27017
+         env:
+         - name: MONGO_INITDB_ROOT_USERNAME
+           value: devdb
+         - name: MONGO_INITDB_ROOT_PASSWORD
+           value: devdb@123
+         volumeMounts:
+         - name: mongodb-pvc
+           mountPath: /data/db
+
+pvc-nfs-pvc-mongo.yml 
+====================
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-nfs-pv1
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: 10.0.0.7
+    path: "/mnt/share"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-nfs-pv1
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 500Mi
+---
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: mongodbrs
+spec:
+  selector:
+    matchLabels:
+      app: mongodb
+  template:
+     metadata:
+       name: mongodbpod
+       labels:
+         app: mongodb
+     spec:
+       volumes:
+       - name: mongodb-pvc
+         persistentVolumeClaim:
+           claimName: pvc-nfs-pv1
+       containers:
+       - name: mongodbcontainer
+         image: mongo
+         ports:
+         - containerPort: 27017
+         env:
+         - name: MONGO_INITDB_ROOT_USERNAME
+           value: devdb
+         - name: MONGO_INITDB_ROOT_PASSWORD
+           value: devdb@123
+         volumeMounts:
+         - name: mongodb-pvc
+           mountPath: /data/db
+====================================
+StatefulSets:
+  BootCamp start 2/9 --- 
+  kubectl create ns ebay 
+  kubectl create ns ebay --v=8  
+
+spe:
+  containers  
+  volumes
+
+https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes/
+
+
+
