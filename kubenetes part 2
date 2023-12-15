@@ -379,5 +379,441 @@ spe:
 
 https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes/
 
+Kubernetes 12 ---  
+=================
+IQ: Explain your experience in kubernetes? 
+Answer:
+I have over 6 years experience in kubernetes performing the following;
+- setting up a multi-node self managed production ready k8s cluster
+  using kubeadm and kops 
+- setting up a single-node self managed cluster using minikube and
+  Docker Desktop for testing.
+- setting up a multi-node managed production ready k8s cluster
+  using amazon eks    
+- troubleshooting issues from k8s setup/configuration or installation.
+- maintaining, monitoring and upgrading the cluster components E.G
+  scheduler, etcd, controllerManagers, kube-proxy, kubectl, kubelet,
+  container-D, Kubernetes-cni, kubectl-csi, apiServer  
+  kops export kubecfg $NAME --admin 
+- deploying applications and workloads using kubernetes objects:
+    - pods/ReplicationControllers/ReplicaSets/DaemonSets,
+      Deployments/StatefulSets/PersistentVolume/ConfigMaps 
+      secrets
+- using deployment as a choice kubernetes objects for stateless apps  
+- using replicasets, volumes with persistenvolumes for Stateful apps  
+- using statefulsets to deploy Stateful applications  
+- rollouts and rollbacks of Deployments 
+- deploying applications using controllerManagers [RC/RS/DS/STS/deploy]
+- setting up Jenkins-kubernetes integration pipeline for full automation 
+- deploying both Stateful applications and Stateless applications  
+- making use of objects like; PV,PVC and dynamic storage classes to 
+  persist data for Stateful applications [mongodb/ES/prometheus/jenkins] 
+- using configmaps and secrets for a secured application deployment   
+- using probes for Health checks configuration in our deployments     
+- using RBAC/namespaces/IAM for a secure access in the k8s. 
+
+
+kops export kubecfg $NAME --admin
+kubectl get node
+
+scheduling:
+  dbNodeGroup     = Memory Optimised : 32GB memory / 512GB memory
+     node1, node2  
+  appNodeGroup    = General Optimised  :  
+     node3, node4  
+Stateful applications:
+   mongodb  
+   mysql  
+   posgresql 
+   dynamoDB  
+Stateless applications:
+   springboot webapp 
+
+scheduling criteria:
+1. scheduling is generally based on resource availability  
+     node1   = 64gb/63gb=1g  
+     node2   = 64gb/63gb=1g 
+     node3   = 64gb/63gb=1g 
+     node11  = 64gb/30gb=34g  
+     pod mem Required=2GB  
+
+2. others:
+   system performance 
+       database nodeGroup opyimised for data mining   
+   max availability [az1/ az2 / az3 ] 
+cloud architect/Engineer
+
+Node Selector,  Node Affinity, And Taints,Tolerations
+Node anti- Affinity, POD Affinity, Pod anti- Affinity,
+===================================================
+kubectl get nodes
+kubectl get nodes --show-labels
+kubectl describe node <nodeId>
+
+-# Add Label to Node
+kubectl label nodes <nodeId/Name> node=workerOne
+kubectl label nodes node1 name=worker1    
+kubectl label nodes node2 node=dbnode 
+kubectl label nodes node2 name=db
+kubectl label nodes node7 node=dbnode 
+kubectl label nodes ip-10-0-143-219.us-west-1.compute.internal name=workerOne  
+
+-# Node Selector
+==============
+kind: Deployment  
+apiVersion: apps/v1
+metadata:
+  name: web  
+spec:
+  template:
+    metadata:
+      name: app  
+      labels: 
+        app: lt 
+    spec:  
+      nodeSelector:
+        name: worker1     
+      containers:
+      - name: app 
+        image: mylandmarktech/java-web-app  
+        ports: 
+        - containerPort: 8080 
+        resources:
+          requests:
+            cpu: 256m 
+            memory: 256Mi     
+  selector:
+    matchLabels:
+      app: lt  
+
+
+ubuntu@master:~$ kubectl get deploy
+NAME   READY   UP-TO-DATE   AVAILABLE   AGE
+web    7/10    10           7           8m55s
+
+
+
+https://github.com/LandmakTechnology/metric-server
+git clone https://github.com/LandmakTechnology/metric-server
+
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webdeploy
+spec:
+  selector:
+    matchLabels:
+      app: myapp
+  template:
+    metadata:
+      labels:
+        app: myapp
+    spec:
+      containers:
+      - name: myapp
+        image: mylandmarktech/hello
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "500m"          
+          limits:
+            memory: "512Mi"
+            cpu: "900m"
+        ports:
+        - containerPort: 80
+  no 
+Node Selector:
+   name: node1  
+
+-#Node Affinity:
+==============
+https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes-using-node-affinity/
+  Preferred rules and Required rules.:
+-# requiredDuringSchedulingIgnoredDuringExecution(HardRule)
+       Scheduling = RUNNING -- application is running  [node: worker1  ] 
+       Execution  = RUNNING -- application is running  [Ignored  ]
+      node1, node2, node3, node11  
+      name: node1  
+
+-# requiredDuringSchedulingRequiredDuringExecution(HardRule)
+       RUNNING -- application is running  [node: worker1  ] 
+      node1, node2, node3, node11  
+      name: node1  
+
+-#preferredDuringSchedulingIgnoredDuringExecution(Soft Rule) 
+      node1, node2, node3, node11  
+      name: node1  
+      menu: FriedRice 
+      fufu, pizza, chicken  
+
+Node affinity searches for Node labels to scheduling pods  
+
+pods affinity and pod anti affinity searches for pod labels for scheduling additional pods  
+
+  NodeAffinity searches for nodes with matching labels 
+     name: dbnode    
+ 
+  NodeAntiAffinity searches for nodes without matching label
+     node1, node2, node3, node11 
+     name: dbnode 
+
+# preferredDuringSchedulingIgnoredDuringExecution(Soft Rule)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: javawebapp
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: javawebapp
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  minReadySeconds: 60
+  template:
+    metadata:
+      name: javawebapp
+      labels:
+        app: javawebapp
+    spec:
+      affinity:
+        nodeAffinity:
+         preferredDuringSchedulingIgnoredDuringExecution:
+           nodeSelectorTerms:
+           - matchExpressions:
+             - key: "name"
+               operator: In
+               values:
+               - worker1
+               - dbnode
+             - key: "node"
+               operator: In
+               values:
+               - db
+      containers:
+      - name: javawebapp
+        image: mylandmarktech/java-web-app
+        ports:
+        - containerPort: 8080
+---
+pod.yml 
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: name
+            operator: In
+            values:
+            - worker1            
+  containers:
+  - name: nginx
+    image: nginx
+    imagePullPolicy: IfNotPresent
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hello  
+spec:
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        preference:
+          matchExpressions:
+          - key: name   
+            operator: In
+            values:
+            - dbnode            
+  containers:
+  - name: hello  
+    image: mylandmarktech/hello  
+    imagePullPolicy: IfNotPresent
+
+pods affinity and pod anti affinity: searches for pod labels for 
+scheduling additional pods 
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: javawebappdeployment
+spec:
+  selector:
+    matchLabels:
+      app: javawebapp
+  template:
+    metadata:
+      name: javawebappod
+      labels:
+        app: javawebapp
+    spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: name
+                operator: In
+                values:
+                - worker1
+            topologyKey: "kubernetes.io/hostname"
+      containers:
+      - name: javawebappcontainer
+        image: mylandmarktech/java-web-app
+        ports:
+        - containerPort: 8080
+
+node1 = us-west-2a  
+node2 = us-west-2b  
+   topologyKey: "kubernetes.io/hostname"
+   topologyKey: "kubernetes.io/az"
+
+kubectl label nodes node1 name=worker1
+---
+-# preferredDuringSchedulingIgnoredDuringExecution(Soft Rule) 
+
+Pod AntiAffinity
+----------------
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: javawebappdeployment
+spec:
+  replicas: 2
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: javawebapp
+  template:
+    metadata:
+      name: javawebapppod
+      labels:
+        app: javawebapp
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - nginx
+            topologyKey: "kubernetes.io/hostname"
+      containers:
+      - name: javawebapp
+        image: mylandmarktech/java-web-app
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 1
+            memory: 1Gi
+---
+A node need maintaining how can that be achieved in kubernetes?
+==============================================================
+Taints,
+kubectl taint nodes <nodeId/Name> <key>=<value>:<effect>
+kubectl taint nodes node1 key1=value1:NoSchedule 
+                                      
+
+kubectl taint nodes node1 key1=value1:NoExecute  
+kubectl taint nodes node2 node=node2:NoExecute  
+kubectl taint nodes node1 key1=value1:NoSchedule 
+kubectl taint nodes node2 node=node2:NoExecute-  
+
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: logmgt
+spec:
+  selector:
+    matchLabels:
+      app: hello
+  template:
+    metadata:
+      name: hello
+      labels:
+        app: hello
+    spec:
+      containers:
+      - name: hello
+        image: mylandmarktech/hello
+        ports:
+        - containerPort: 80
+---
+kubectl taint nodes node1 key1=value1:NoSchedule 
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: logmgt
+spec:
+  selector:
+    matchLabels:
+      app: hello
+  template:
+    metadata:
+      name: hello
+      labels:
+        app: hello
+    spec:
+      tolerations:
+      - effect: NoSchedule
+        operator: "Exists"
+        key: "key1"
+      containers:
+      - name: hello
+        image: mylandmarktech/hello
+        ports:
+        - containerPort: 80
+# kubectl taint nodes node1 key1=value1:NoSchedule
+# tolerations:
+#- key: "key1"
+
+Tolerations:
+
+tolerations:
+- key: "key1"
+  operator: "Exists"
+  effect: "NoSchedule"
+---
+tolerations:
+- key: "key1"
+  operator: "Equal"
+  value: "value1"
+  effect: "NoSchedule"  
+
+Taint a node
+
+cordon and uncordon:
+  kubectl cordon  nodeName/ID  [SchedulingDisabled]
+  kubectl cordon  node1  = SchedulingDisabled
+  kubectl drain node1    = 
+     pods are evicted and node maintenance can proceed 
+        kubelet version, 
+  kubectl uncordon node1 
+
+scaling nodes /        
+
+
+
+
 
 
