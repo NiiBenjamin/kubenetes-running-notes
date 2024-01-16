@@ -179,3 +179,85 @@ helm to install and deploy:
 
 Homework:
 What problems have you encountered applying kubernetes in environment?
+
+=====================================
+Prometheus/Grafana 
+=====================================
+application performance monitoring = APM   
+monitoring (micro-service) applications with  
+Prometheus and Grafana
+======================================
+deploy prometheus using helm:
+https://github.com/myLandmakTechnology/prometheus-grafana-ELK-EFK
+what can we monitor??
+  1. are all they pods running
+  2. pod failures  
+  3. network and latency  
+  4. guages/metric cpu/mem
+     metric server is deployed  
+  5. node down    
+
+Prometheus when deployed comes with other micro-services
+  1. alertManager  
+  2. Prometheus server 
+     database
+  3. nodeExporters  
+  4. kube-state-metrics  
+
+helm charts for:
+nginx-ingress   https://helm.nginx.com/stable
+grafana         https://grafana.github.io/helm-charts
+prometheus      https://prometheus-community.github.io/helm-charts
+
+helm-charts  
+helm-cli 
+helm-repository  
+
+deploy prometheus using helm   
+==========================
+helm repo add prometheus https://prometheus-community.github.io/helm-charts   
+helm install prometheus prometheus/prometheus
+helm show values prometheus/prometheus
+helm template prometheus/prometheus
+
+helm install prometheus prometheus/prometheus
+helm upgrade prometheus prometheus/prometheus -f prometheus-values.yml
+
+git clone https://github.com/myLandmakTechnology/prometheus-grafana-ELK-EFK
+
+deploy grafana using helm   
+==========================
+grafana   https://grafana.github.io/helm-charts   
+  helm repo add grafana https://grafana.github.io/helm-charts
+  helm install grafana grafana/grafana 
+
+kubectl get secret --namespace dev grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
+
+-
+Sample Dash Board IDS: 
+  3119, 7249,  8919, 6417 ,11074
+
+
+EFK Video  
+Terraform  = 
+Ansible  
+
+
+Rancher and kubernetes:
+  PROVIDE A Kubernetes platform  
+  With Rancher we can import and manage multiple kubernetes clusters    
+  We can create clusters like EKS / AKS / GKE, etc.   
+  Rancher provide a dasborad for kubernetes
+Rancher is deployed using docker  
+sudo docker run --privileged -d --restart=unless-stopped -p 80:80 -p 443:443 rancher/rancher
+
+
+ Error response from daemon: driver failed programming 
+ external connectivity on endpoint suspicious_ellis (00a72705c63b3a7b9ed77dd12537a5a3ff3f0c2cbb6d200eb78e3409d34468d7):
+  Bind for 0.0.0.0:80 failed: port is already allocated.
+
+docker logs  container-id  2>&1 | grep "Bootstrap Password:"   
+
+bc99c1f474f9
+
+docker logs  bc99c1f474f9 2>&1 | grep "Bootstrap Password:"
